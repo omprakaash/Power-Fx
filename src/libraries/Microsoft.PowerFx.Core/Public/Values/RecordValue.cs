@@ -29,6 +29,7 @@ namespace Microsoft.PowerFx.Core.Public.Values
             return new InMemoryRecordValue(IRContext.NotInSource(type), new List<NamedValue>());
         }
 
+        // $$$ This shouldn't be virtual. 
         public virtual FormulaValue GetField(string name)
         {
             return GetField(IRContext.NotInSource(FormulaType.Blank), name);
@@ -61,7 +62,7 @@ namespace Microsoft.PowerFx.Core.Public.Values
             return e;
         }
 
-        public override void Visit(IValueVisitor visitor)
+        public sealed override void Visit(IValueVisitor visitor)
         {
             visitor.Visit(this);
         }

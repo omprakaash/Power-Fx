@@ -301,6 +301,7 @@ namespace Microsoft.PowerFx.Core.Public.Values
             return RecordFromProperties(obj, typeof(T));
         }
 
+        // $$$ This .net logic should be moved to a marshaller...
         public static RecordValue RecordFromProperties(object obj, Type type)
         {
             var r = RecordFromFields(
@@ -310,7 +311,7 @@ namespace Microsoft.PowerFx.Core.Public.Values
 
             return r;
         }
-
+        
         /// <summary>
         /// Create a record from the list of fields provided. 
         /// </summary>

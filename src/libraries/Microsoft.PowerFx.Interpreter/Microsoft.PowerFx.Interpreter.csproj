@@ -14,6 +14,8 @@
 		<PackageId>Microsoft.PowerFx.Interpreter</PackageId>
 		<Title>Microsoft Power Fx Compiler - Interpreter Target</Title>
 		<Description>The Interpreter the Power Fx compiler</Description>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+		<RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
 	</PropertyGroup>
 	<ItemGroup>
 	  <AdditionalFiles Include="..\..\stylecop.json" Link="stylecop.json" />

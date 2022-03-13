@@ -21,6 +21,8 @@
 		<Description>The core library for all Microsoft Power Fx Compiler targets</Description>
 		<Summary>The core library for all Microsoft Power Fx Compiler targets</Summary>
 		<GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+		<RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+		<EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
 	</PropertyGroup>
 
 	<ItemGroup>
