@@ -69,6 +69,47 @@ namespace Microsoft.PowerFx.Tests
             Assert.Equal("three", ((StringValue)result1).Value);
         }
 
+        private class TestNode
+        {
+            public int Data { get; set; }
+
+            public TestNode Next { get; set; }
+        }
+
+        [Fact]
+        public void TestRecursion()
+        {
+            // Be sure to use 'var' instead of 'object' so that we have compiler-time access to fields.           
+            var node1 = new TestNode
+            {
+                 Data = 10,
+                 Next = new TestNode
+                 {
+                     Data = 20, 
+                     Next = new TestNode
+                     {
+                         Data = 30
+                     }
+                 }
+            };
+            node1.Next.Next.Next = node1; // create a cycle. 
+
+            var cache = new TypeMarshallerCache();
+            var x = cache.Marshal(node1);            
+
+            var engine = new RecalcEngine();
+            engine.UpdateVariable("x", x);
+
+            var result1 = engine.Eval("x.Data");
+            Assert.Equal(10.0, ((NumberValue)result1).Value);
+
+            var result2 = engine.Eval("x.Data.Next");
+            Assert.Equal(20.0, ((NumberValue)result2).Value);
+
+            var result3 = engine.Eval("x.Next.Next.Data");
+            Assert.Equal(30.0, ((NumberValue)result3).Value);
+        }
+
         [Fact]
         public void Test1()
         {

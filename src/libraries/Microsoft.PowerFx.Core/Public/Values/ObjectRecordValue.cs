@@ -8,6 +8,7 @@ using System.Dynamic;
 using System.Reflection;
 using Microsoft.PowerFx.Core.IR;
 using Microsoft.PowerFx.Core.Public.Types;
+using static Microsoft.PowerFx.ObjectMarshalerProvider;
 
 namespace Microsoft.PowerFx.Core.Public.Values
 {
@@ -15,10 +16,7 @@ namespace Microsoft.PowerFx.Core.Public.Values
     {
         public object Source { get; set; }
 
-        // FxField name back to .net property ($$$ or field, or arbitrary getter?)
-        // This is fixed per-type. 
-        // $$$ Point back to TypeMarshaller?
-        internal Dictionary<string, Func<object, FormulaValue>> _mapping;
+        internal ObjectMarshaler _mapping;
 
         internal ObjectRecordValue(IRContext irContext) 
             : base(irContext)
@@ -29,10 +27,10 @@ namespace Microsoft.PowerFx.Core.Public.Values
 
         internal override FormulaValue GetField(IRContext irContext, string name)
         {
-            if (_mapping.TryGetValue(name, out var getter))
+            var value = _mapping.TryGetField(Source, name);
+            if (value != null)
             {
-                var fieldValue = getter(Source);
-                return fieldValue;
+                return value;
             }
             else
             {
