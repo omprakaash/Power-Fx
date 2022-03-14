@@ -18,10 +18,7 @@ using Xunit.Sdk;
 
 namespace Microsoft.PowerFx.Tests
 {
-    // $$$ - recursive
-    // $$$ set-only property ignored. 
-    // $$$ Lazy ... prop that throws...
-    public class Class1Tests
+    public class MarshalTests
     {
         // Basic marshalling hook. 
         private static string Hook(PropertyInfo propInfo) => propInfo.Name.StartsWith("_") ?
@@ -59,9 +56,8 @@ namespace Microsoft.PowerFx.Tests
             var cache = new TypeMarshallerCache();
             var t = cache.New(oneObj.GetType());
 
-            // $$$ Test that this doesn't actually evaluate any fields...
             var x = t.Marshal(oneObj);
-            
+
             var engine = new RecalcEngine();
             engine.UpdateVariable("x", x);
 
@@ -82,23 +78,23 @@ namespace Microsoft.PowerFx.Tests
             // Be sure to use 'var' instead of 'object' so that we have compiler-time access to fields.           
             var node1 = new TestNode
             {
-                 Data = 10,
-                 Next = new TestNode
-                 {
-                     Data = 20, 
-                     Next = new TestNode
-                     {
-                         Data = 30
-                     }
-                 }
+                Data = 10,
+                Next = new TestNode
+                {
+                    Data = 20,
+                    Next = new TestNode
+                    {
+                        Data = 30
+                    }
+                }
             };
 
             // create a cycle. 
             // Recursion has a default marshalling depth. 
-            node1.Next.Next.Next = node1; 
+            node1.Next.Next.Next = node1;
 
             var cache = new TypeMarshallerCache();
-            var x = cache.Marshal(node1);            
+            var x = cache.Marshal(node1);
 
             var engine = new RecalcEngine();
             engine.UpdateVariable("x", x);
@@ -120,7 +116,7 @@ namespace Microsoft.PowerFx.Tests
             var fileObj = new
             {
                 Filename = "foo.txt",
-                Length = 12.0,            
+                Length = 12.0,
                 _Skip = "skip me!"
             };
 
@@ -146,39 +142,43 @@ namespace Microsoft.PowerFx.Tests
             // Ensure skipped property is not visible. 
             var check3 = engine.Check("x._SkipProp");
             Assert.False(check3.IsSuccess);
+        }
 
-            /*
-            // Test hook. Ignore properties with "_". Append "Prop" to name. 
-            Func<PropertyInfo, string> hook = (propInfo) => propInfo.Name.StartsWith("_") ?
-                null : // skip
-                propInfo.Name + "Prop";
+        private class TestObj
+        {
+            internal int _counter;
 
-            var val = ObjectRecordValue.New(fileObj, hook);
+            public int Field1
+            {
+                get
+                {
+                    _counter++; // for observing number of Gets
+                    return _counter;
+                }
+            }
+        }
 
-            var fileObj2 = val.Source; // unwrap
+        // Verify that marshalling doesn't eagerly evaluate fields.
+        [Fact]
+        public void TestLazyFields()
+        {
+            var obj1 = new TestObj();
 
-            Assert.IsTrue(Object.ReferenceEquals(fileObj, fileObj2));
+            Assert.Equal(1, obj1.Field1);
+            Assert.Equal(2, obj1.Field1);
+            Assert.Equal(2, obj1._counter);
 
-            // Ensure we can pass through the engine and get out. 
+            var cache = new TypeMarshallerCache();
+
+            var x = cache.Marshal(obj1);
+            Assert.Equal(2, obj1._counter); // doesn't increment
+
             var engine = new RecalcEngine();
-            engine.UpdateVariable("x", val);
+            engine.UpdateVariable("x", x);
 
-            var result1 = engine.Eval("x.LengthProp");
-            Assert.IsTrue(((double)result1.ToObject()) == fileObj.Length);
-
-            var result2 = engine.Eval("x.DetailsProp.DataProp");
-            Assert.AreEqual(result2.ToObject(), innerObj.Data);
-
-            // Non trivial expression. 
-            var result = engine.Eval("If(true, x, Blank())");
-            var fileObj3 = ((ObjectRecordValue)result).Source;
-
-            Assert.IsTrue(Object.ReferenceEquals(fileObj, fileObj3));
-
-            // Ensure skipped property is not visible. 
-            var check1 = engine.Check("x._SkipProp");
-            Assert.IsFalse(check1.IsSuccess);
-            */
+            Assert.Equal(2, obj1._counter); // doesn't increment
+            var result1 = engine.Eval("x.Field1");
+            Assert.Equal(3.0, ((NumberValue)result1).Value);
         }
     }
 }
