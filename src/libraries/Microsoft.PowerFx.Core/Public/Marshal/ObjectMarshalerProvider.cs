@@ -19,6 +19,10 @@ namespace Microsoft.PowerFx
     /// </summary>
     public class ObjectMarshalerProvider : ITypeMashalerProvider
     {
+        // $$$
+        //  - fxName,
+        //  - .Net type (for getting the marhsaler)
+        //  - getter for runtime value
         // Customization point 
         public Func<PropertyInfo, string> _mapper = (propInfo) => propInfo.Name;
 

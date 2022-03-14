@@ -2,19 +2,11 @@
 // Licensed under the MIT license.
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.PowerFx.Core;
-using Microsoft.PowerFx.Core.Public;
 using Microsoft.PowerFx.Core.Public.Types;
 using Microsoft.PowerFx.Core.Public.Values;
-using Microsoft.PowerFx.Core.Texl;
-using Microsoft.PowerFx.Core.Utils;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Microsoft.PowerFx.Tests
 {
@@ -215,7 +207,69 @@ namespace Microsoft.PowerFx.Tests
             engine.UpdateVariable("x", x);
 
             var result1 = engine.Eval("Last(x).Value");
-            Assert.Equal(30.0, ((NumberValue)result1).Value);            
+            Assert.Equal(30.0, ((NumberValue)result1).Value);
         }
+
+        public class Widget
+        {
+            public string Data { get; set; }
+        }
+
+        // Custom marshaller. Marshal Widget objects as Strings with a "W" prefix. 
+        private class WidgetMarshalerProvider : ITypeMashalerProvider
+        {
+            public ITypeMarshaler New(Type type, TypeMarshallerCache cache, int maxDepth)
+            {
+                if (type != typeof(Widget))
+                {
+                    return null;
+                }
+
+                return new WidgetMarshaler();
+            }
+
+            private class WidgetMarshaler : ITypeMarshaler
+            {
+                public FormulaType Type => FormulaType.String;
+
+                public FormulaValue Marshal(object value)
+                {
+                    // adding a "W" prefix ensures this code is run and it's not just some cast. 
+                    var w = (Widget)value;
+                    return FormulaValue.New("W" + w.Data);
+                }
+            }
+        }
+
+        [Fact]
+        public void TestCustomType()
+        {
+            var cache = new TypeMarshallerCache();
+
+            // Insert at 0 to get precedence over generic object marshaller
+            cache.Marshallers.Insert(0, new WidgetMarshalerProvider());
+
+            var obj = new
+            {
+                Length = 12.0,
+                Widget1 = new Widget
+                {
+                    Data = "A"
+                },
+                Widget2 = new Widget
+                {
+                    Data = "B"
+                }
+            };
+
+            var x = cache.Marshal(obj);
+
+            var engine = new RecalcEngine();
+            engine.UpdateVariable("x", x);
+
+            // Properties are renamed. 
+            var result1 = engine.Eval("x.Widget1 & x.Widget2");
+            Assert.Equal("WAWB", ((StringValue)result1).Value);
+        }        
     }
 }
