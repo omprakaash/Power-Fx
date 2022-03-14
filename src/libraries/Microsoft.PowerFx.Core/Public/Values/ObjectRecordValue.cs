@@ -12,16 +12,18 @@ using static Microsoft.PowerFx.ObjectMarshalerProvider;
 
 namespace Microsoft.PowerFx.Core.Public.Values
 {
-    // $$$ Move to interpreter?
+    // $$$ Move to interpreter? Or move Source property to RecordValue?
     public class ObjectRecordValue : RecordValue
     {
-        public object Source { get; set; }
+        public object Source { get; private set; }
 
-        internal ObjectMarshaler _mapping;
+        private readonly ObjectMarshaler _mapping;
 
-        internal ObjectRecordValue(IRContext irContext) 
+        internal ObjectRecordValue(IRContext irContext, object source, ObjectMarshaler marshaler) 
             : base(irContext)
         {
+            Source = source;
+            _mapping = marshaler;
         }
 
         public override IEnumerable<NamedValue> Fields => throw new NotImplementedException();

@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Microsoft.PowerFx.Tests
 {
+    // Test marshaling between C# objectrs and Power Fx values. 
     public class MarshalTests
     {
         // Basic marshalling hook. 
@@ -17,6 +18,7 @@ namespace Microsoft.PowerFx.Tests
             null : // skip
             propInfo.Name + "Prop";
 
+        // Do a trivial marshal.
         [Fact]
         public void Primitive()
         {
@@ -29,7 +31,7 @@ namespace Microsoft.PowerFx.Tests
         }
 
         [Fact]
-        public void Test2()
+        public void Nesting()
         {
             // Be sure to use 'var' instead of 'object' so that we have compiler-time access to fields.           
             var oneObj = new
@@ -88,6 +90,8 @@ namespace Microsoft.PowerFx.Tests
             var cache = new TypeMarshallerCache();
             var x = cache.Marshal(node1);
 
+            // If we made it here, at leat we didn't hang marshalling the infinite cycle. 
+
             var engine = new RecalcEngine();
             engine.UpdateVariable("x", x);
 
@@ -99,10 +103,13 @@ namespace Microsoft.PowerFx.Tests
 
             var result3 = engine.Eval("x.Next.Next.Data");
             Assert.Equal(30.0, ((NumberValue)result3).Value);
+
+            // $$$ test that it was Truncated...
         }
 
+        // Marshal objects with a custom hook. 
         [Fact]
-        public void Test1()
+        public void CustomMarshaling()
         {
             // Be sure to use 'var' instead of 'object' so that we have compiler-time access to fields.           
             var fileObj = new
@@ -113,7 +120,7 @@ namespace Microsoft.PowerFx.Tests
             };
 
             var cache = new TypeMarshallerCache();
-            cache.Marshallers.OfType<ObjectMarshalerProvider>().First()._mapper = Hook;
+            cache.Marshallers.OfType<ObjectMarshalerProvider>().First().PropertyMapperFunc = Hook;
 
             var t = cache.New(fileObj.GetType());
 
@@ -152,7 +159,7 @@ namespace Microsoft.PowerFx.Tests
 
         // Verify that marshalling doesn't eagerly evaluate fields.
         [Fact]
-        public void TestLazyFields()
+        public void LazyFields()
         {
             var obj1 = new TestObj();
 
@@ -173,8 +180,9 @@ namespace Microsoft.PowerFx.Tests
             Assert.Equal(3.0, ((NumberValue)result1).Value);
         }
 
+        // Marshal an array of records to a table. 
         [Fact]
-        public void TestRecordArray()
+        public void TableFromRecordArray()
         {
             var array = new TestObj[]
             {
@@ -195,8 +203,9 @@ namespace Microsoft.PowerFx.Tests
             Assert.Equal(11.0, ((NumberValue)result2).Value);
         }
 
+        // Marshal a SCT from an array of primitive. 
         [Fact]
-        public void TestPrimitiveArray()
+        public void SingleColumnTableFromPrimitiveArray()
         {
             var array = new int[] { 10, 20, 30 };
 
@@ -241,8 +250,9 @@ namespace Microsoft.PowerFx.Tests
             }
         }
 
+        // Test a custom marshaler. 
         [Fact]
-        public void TestCustomType()
+        public void CustomMarshalerType()
         {
             var cache = new TypeMarshallerCache();
 
@@ -270,6 +280,6 @@ namespace Microsoft.PowerFx.Tests
             // Properties are renamed. 
             var result1 = engine.Eval("x.Widget1 & x.Widget2");
             Assert.Equal("WAWB", ((StringValue)result1).Value);
-        }        
+        }             
     }
 }

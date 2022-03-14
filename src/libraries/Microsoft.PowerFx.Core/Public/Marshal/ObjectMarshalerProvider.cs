@@ -19,12 +19,12 @@ namespace Microsoft.PowerFx
     /// </summary>
     public class ObjectMarshalerProvider : ITypeMashalerProvider
     {
-        // $$$
+        // $$$ To marshal an object, we need:
         //  - fxName,
         //  - .Net type (for getting the marhsaler)
         //  - getter for runtime value
         // Customization point 
-        public Func<PropertyInfo, string> _mapper = (propInfo) => propInfo.Name;
+        public Func<PropertyInfo, string> PropertyMapperFunc = (propInfo) => propInfo.Name;
 
         public ITypeMarshaler New(Type type, TypeMarshallerCache cache, int maxDepth)
         {        
@@ -45,7 +45,7 @@ namespace Microsoft.PowerFx
                     continue;
                 }
 
-                var fxName = _mapper(prop);
+                var fxName = PropertyMapperFunc(prop);
                 if (fxName == null)
                 {
                     continue;
@@ -64,44 +64,49 @@ namespace Microsoft.PowerFx
                 fxType = fxType.Add(fxName, fxFieldType);
             }
 
-            return new ObjectMarshaler
+            return new ObjectMarshaler(fxType, mapping);
+        }      
+    }
+
+    /// <summary>
+    /// Marshal a specific type of object to a record. 
+    /// </summary>
+    public class ObjectMarshaler : ITypeMarshaler
+    {
+        // Map fx field name to a function produces the formula value given the dotnet object.
+        private readonly IReadOnlyDictionary<string, Func<object, FormulaValue>> _mapping;
+
+        public FormulaType Type { get; private set; }
+
+        // FormulaType must be a record, and the dictionary provders getters for each field in that record. 
+        public ObjectMarshaler(FormulaType type, IReadOnlyDictionary<string, Func<object, FormulaValue>> fieldMap)
+        {
+            if (!(type is RecordType))
             {
-                _fxType = fxType,
-                _mapping = mapping
-            };
+                throw new ArgumentException($"type must be a record, not ${type}");
+            }
+
+            Type = type;
+            _mapping = fieldMap;
         }
 
-        internal class ObjectMarshaler : ITypeMarshaler
+        public FormulaValue Marshal(object source)
         {
-            // Map fx field name to a function produces the formula value given the dotnet object.
-            internal Dictionary<string, Func<object, FormulaValue>> _mapping;
+            var value = new ObjectRecordValue(IRContext.NotInSource(Type), source, this);
+            return value;
+        }
 
-            internal FormulaType _fxType;
-
-            public FormulaType Type => _fxType;
-
-            public FormulaValue Marshal(object o)
+        // Get the value of the field. 
+        // Return null on missing
+        public FormulaValue TryGetField(object source, string name)
+        {
+            if (_mapping.TryGetValue(name, out var getter))
             {
-                var value = new ObjectRecordValue(IRContext.NotInSource(_fxType))
-                {
-                    Source = o,
-                    _mapping = this
-                };
-                return value;
+                var fieldValue = getter(source);
+                return fieldValue;
             }
 
-            // Get the value of the field. 
-            // Return null on missing
-            internal FormulaValue TryGetField(object source, string name)
-            {
-                if (_mapping.TryGetValue(name, out var getter))
-                {
-                    var fieldValue = getter(source);
-                    return fieldValue;
-                }
-
-                return null;
-            }
+            return null;
         }
     }
 }
