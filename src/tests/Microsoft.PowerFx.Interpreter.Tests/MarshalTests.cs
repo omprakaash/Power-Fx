@@ -19,6 +19,7 @@ using Xunit.Sdk;
 namespace Microsoft.PowerFx.Tests
 {
     // $$$ - recursive
+    // $$$ set-only property ignored. 
     // $$$ Lazy ... prop that throws...
     public class Class1Tests
     {
@@ -26,6 +27,37 @@ namespace Microsoft.PowerFx.Tests
         private static string Hook(PropertyInfo propInfo) => propInfo.Name.StartsWith("_") ?
             null : // skip
             propInfo.Name + "Prop";
+
+        private static string HookNop(PropertyInfo propInfo) => propInfo.Name;
+
+        [Fact]
+        public void Test2()
+        {
+            // Be sure to use 'var' instead of 'object' so that we have compiler-time access to fields.           
+            var oneObj = new
+            {
+                data1 = "one",
+                two = new
+                {
+                    data2 = "two",
+                    three = new
+                    {
+                        data3 = "three"
+                    }
+                }
+            };
+
+            var t = TypeMarshaller.New(oneObj.GetType(), HookNop);
+
+            // $$$ Test that this doesn't actually evaluate any fields...
+            var x = t.Marshal(oneObj);
+            
+            var engine = new RecalcEngine();
+            engine.UpdateVariable("x", x);
+
+            var result1 = engine.Eval("x.two.three.data3");
+            Assert.Equal("three", ((StringValue)result1).Value);
+        }
 
         [Fact]
         public void Test1()

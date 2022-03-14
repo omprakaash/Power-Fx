@@ -29,7 +29,7 @@ namespace Microsoft.PowerFx.Core.Public.Values
             return new InMemoryRecordValue(IRContext.NotInSource(type), new List<NamedValue>());
         }
 
-        // $$$ This shouldn't be virtual. 
+        // $$$ This shouldn't be virtual. But IRContext is internal...
         public virtual FormulaValue GetField(string name)
         {
             return GetField(IRContext.NotInSource(FormulaType.Blank), name);

@@ -16,7 +16,9 @@ namespace Microsoft.PowerFx.Core.Public.Values
         public object Source { get; set; }
 
         // FxField name back to .net property ($$$ or field, or arbitrary getter?)
-        internal Dictionary<string, PropertyInfo> _mapping;
+        // This is fixed per-type. 
+        // $$$ Point back to TypeMarshaller?
+        internal Dictionary<string, Func<object, FormulaValue>> _mapping;
 
         internal ObjectRecordValue(IRContext irContext) 
             : base(irContext)
@@ -27,20 +29,14 @@ namespace Microsoft.PowerFx.Core.Public.Values
 
         internal override FormulaValue GetField(IRContext irContext, string name)
         {
-            if (_mapping.TryGetValue(name, out var propInfo))
+            if (_mapping.TryGetValue(name, out var getter))
             {
-                var value = propInfo.GetValue(Source);
-
-                // Marshal back to Fx...
-                // $$$ Ensure types match
-                // $$$ Recursive?
-                var expectedType = ((RecordType)Type).GetFieldType(name);
-
-                return FormulaValue.New(value, propInfo.PropertyType);
+                var fieldValue = getter(Source);
+                return fieldValue;
             }
             else
             {
-                // Missing field. Should error...
+                // Missing field. Should be compiler time error...
                 return new ErrorValue(irContext);
             }
         }

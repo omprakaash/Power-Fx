@@ -12,17 +12,18 @@ using Microsoft.PowerFx.Core.IR;
 using Microsoft.PowerFx.Core.Public.Types;
 
 namespace Microsoft.PowerFx.Core.Public.Values
-{
+{    
     // These can be cached....
     public class TypeMarshaller
     {
-        private Dictionary<string, PropertyInfo> _mapping;
+        // Map fieldName --> function that takes runtime object and returns the value. 
+        private Dictionary<string, Func<object, FormulaValue>> _mapping;
 
         private FormulaType _fxType;
 
         public static TypeMarshaller New(Type type, Func<PropertyInfo, string> mapper)
         {
-            var mapping = new Dictionary<string, PropertyInfo>(); // $$$ Casing?
+            var mapping = new Dictionary<string, Func<object, FormulaValue>>(); // $$$ Casing?
 
             var fxType = new RecordType();                        
 
@@ -39,20 +40,37 @@ namespace Microsoft.PowerFx.Core.Public.Values
                 {
                     continue;
                 }
-
-                mapping[fxName] = prop;
+                              
+                // $$$ Avoid switch case here...
                 FormulaType fxFieldType = null;
+                Func<object, FormulaValue> getter = null;
                 if (prop.PropertyType == typeof(string))
                 {
                     fxFieldType = FormulaType.String;
+                    getter = (objSource) => FormulaValue.New((string)objSource);
                 } 
                 else if (prop.PropertyType == typeof(double))
                 {
                     fxFieldType = FormulaType.Number;
+                    getter = (objSource) => FormulaValue.New((double)objSource);
                 }
+                else if (prop.PropertyType.IsClass)
+                {
+                    // Recursive!
+                    var tm2 = New(prop.PropertyType, mapper);
+                    fxFieldType = tm2._fxType;
+                    getter = (objSource) => tm2.Marshal(objSource);
+                } 
                 else
                 {
                 }
+
+                // Basic .net property
+                mapping[fxName] = (object objSource) =>
+                {
+                    var propValue = prop.GetValue(objSource);
+                    return getter(propValue);
+                };
 
                 fxType = fxType.Add(fxName, fxFieldType);
             }
@@ -64,7 +82,7 @@ namespace Microsoft.PowerFx.Core.Public.Values
             };
         }
 
-        public RecordValue Marshal(object o)
+        public ObjectRecordValue Marshal(object o)
         {
             var value = new ObjectRecordValue(IRContext.NotInSource(_fxType))
             {
