@@ -12,7 +12,7 @@ namespace Microsoft.PowerFx
     /// </summary>
     public class IdentityMarshalerProvider : ITypeMashalerProvider
     {
-        public ITypeMarshaler New(Type type, TypeMarshallerCache cache)
+        public ITypeMarshaler New(Type type, TypeMarshallerCache cache, int maxDepth)
         {
             if (typeof(FormulaValue).IsAssignableFrom(type))
             {

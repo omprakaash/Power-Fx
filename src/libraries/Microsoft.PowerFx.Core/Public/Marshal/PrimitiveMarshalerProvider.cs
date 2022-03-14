@@ -20,7 +20,7 @@ namespace Microsoft.PowerFx
             // $$$ add others...
         };
 
-        public ITypeMarshaler New(Type type, TypeMarshallerCache cache)
+        public ITypeMarshaler New(Type type, TypeMarshallerCache cache, int maxDepth)
         {
             if (_map.TryGetValue(type, out var fxType))
             {

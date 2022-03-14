@@ -21,7 +21,7 @@ namespace Microsoft.PowerFx
     {
         public Func<PropertyInfo, string> _mapper = (propInfo) => propInfo.Name;
 
-        public ITypeMarshaler New(Type type, TypeMarshallerCache cache)
+        public ITypeMarshaler New(Type type, TypeMarshallerCache cache, int maxDepth)
         {        
             if (!type.IsClass)
             {
@@ -46,7 +46,7 @@ namespace Microsoft.PowerFx
                     continue;
                 }
 
-                var tm = cache.New(prop.PropertyType);
+                var tm = cache.New(prop.PropertyType, maxDepth);
                 var fxFieldType = tm.Type;
 
                 // Basic .net property

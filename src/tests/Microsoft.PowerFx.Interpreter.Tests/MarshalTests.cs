@@ -92,7 +92,10 @@ namespace Microsoft.PowerFx.Tests
                      }
                  }
             };
-            node1.Next.Next.Next = node1; // create a cycle. 
+
+            // create a cycle. 
+            // Recursion has a default marshalling depth. 
+            node1.Next.Next.Next = node1; 
 
             var cache = new TypeMarshallerCache();
             var x = cache.Marshal(node1);            
@@ -103,7 +106,7 @@ namespace Microsoft.PowerFx.Tests
             var result1 = engine.Eval("x.Data");
             Assert.Equal(10.0, ((NumberValue)result1).Value);
 
-            var result2 = engine.Eval("x.Data.Next");
+            var result2 = engine.Eval("x.Next.Data");
             Assert.Equal(20.0, ((NumberValue)result2).Value);
 
             var result3 = engine.Eval("x.Next.Next.Data");

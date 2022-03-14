@@ -33,45 +33,27 @@ namespace Microsoft.PowerFx
             new ObjectMarshalerProvider()
         };
 
-        private TypeMarshallerCache _outer;
-        private int _depth;
-
         /// <summary>
         /// Returns a marshaller for the given type. 
         /// </summary>
         /// <param name="type">type to marshal.</param>
         /// <returns>marshaller.</returns>
-        public ITypeMarshaler New(Type type)
+        public ITypeMarshaler New(Type type, int maxDepth = 3)
         {
-            if (_outer == null)
+            if (maxDepth < 0)
             {
-                var inner = new TypeMarshallerCache
-                {
-                    _cache = _cache,
-                    Marshallers = Marshallers,
-                    _outer = this,
-                    _depth = 3
-                };
-                return inner.New(type);
-            } 
-            else
-            {
-                _depth--;
-                if (_depth < 0)
-                {
-                    return new Empty();
-                }
+                return new Empty();
             }
 
             // The ccahe requires an exact type match and doesn't handle base types.
             if (_cache.TryGetValue(type, out var tm))
             {
                 return tm;
-            }
+            }            
 
             foreach (var marshaller in Marshallers)
             {
-                tm = marshaller.New(type, this);
+                tm = marshaller.New(type, this, maxDepth - 1);
                 if (tm != null)
                 {
                     _cache[type] = tm;
