@@ -28,7 +28,16 @@ namespace Microsoft.PowerFx.Tests
             null : // skip
             propInfo.Name + "Prop";
 
-        private static string HookNop(PropertyInfo propInfo) => propInfo.Name;
+        [Fact]
+        public void Primitive()
+        {
+            var cache = new TypeMarshallerCache();
+            var tm = cache.New(typeof(int));
+
+            var value = tm.Marshal(5);
+
+            Assert.Equal(5.0, ((NumberValue)value).Value);
+        }
 
         [Fact]
         public void Test2()
@@ -47,7 +56,8 @@ namespace Microsoft.PowerFx.Tests
                 }
             };
 
-            var t = TypeMarshaller.New(oneObj.GetType(), HookNop);
+            var cache = new TypeMarshallerCache();
+            var t = cache.New(oneObj.GetType());
 
             // $$$ Test that this doesn't actually evaluate any fields...
             var x = t.Marshal(oneObj);
@@ -70,7 +80,10 @@ namespace Microsoft.PowerFx.Tests
                 _Skip = "skip me!"
             };
 
-            var t = TypeMarshaller.New(fileObj.GetType(), Hook);
+            var cache = new TypeMarshallerCache();
+            cache.Marshallers.OfType<ObjectMarshalerProvider>().First()._mapper = Hook;
+
+            var t = cache.New(fileObj.GetType());
 
             var x = t.Marshal(fileObj);
 
