@@ -182,7 +182,7 @@ namespace Microsoft.PowerFx.Tests
         }
 
         [Fact]
-        public void TestArray()
+        public void TestRecordArray()
         {
             var array = new TestObj[]
             {
@@ -201,6 +201,21 @@ namespace Microsoft.PowerFx.Tests
 
             var result2 = engine.Eval("First(x).Field1");
             Assert.Equal(11.0, ((NumberValue)result2).Value);
+        }
+
+        [Fact]
+        public void TestPrimitiveArray()
+        {
+            var array = new int[] { 10, 20, 30 };
+
+            var cache = new TypeMarshallerCache();
+            var x = cache.Marshal(array);
+
+            var engine = new RecalcEngine();
+            engine.UpdateVariable("x", x);
+
+            var result1 = engine.Eval("Last(x).Value");
+            Assert.Equal(30.0, ((NumberValue)result1).Value);            
         }
     }
 }
