@@ -20,7 +20,7 @@ namespace Microsoft.PowerFx
     public class TypeMarshallerCache
     {
         // Map from a .net type to the marshaller for that type
-        private Dictionary<Type, ITypeMarshaler> _cache = new Dictionary<Type, ITypeMarshaler>();
+        private readonly Dictionary<Type, ITypeMarshaler> _cache = new Dictionary<Type, ITypeMarshaler>();
 
         /// <summary>
         /// Ordered list of type marshallers. First marshaller to handle is used. 
@@ -30,6 +30,7 @@ namespace Microsoft.PowerFx
             // JsonElement? 
             // new IdentityMarshalerProvider(),
             new PrimitiveMarshalerProvider(),
+            new TableMarshalerProvider(),
             new ObjectMarshalerProvider()
         };
 

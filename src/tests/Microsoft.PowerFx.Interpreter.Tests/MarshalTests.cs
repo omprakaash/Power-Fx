@@ -180,5 +180,27 @@ namespace Microsoft.PowerFx.Tests
             var result1 = engine.Eval("x.Field1");
             Assert.Equal(3.0, ((NumberValue)result1).Value);
         }
+
+        [Fact]
+        public void TestArray()
+        {
+            var array = new TestObj[]
+            {
+                new TestObj { _counter = 10 },
+                new TestObj { _counter = 20 }
+            };
+
+            var cache = new TypeMarshallerCache();
+            var x = cache.Marshal(array);
+
+            var engine = new RecalcEngine();
+            engine.UpdateVariable("x", x);
+
+            var result1 = engine.Eval("Last(x).Field1");
+            Assert.Equal(21.0, ((NumberValue)result1).Value);
+
+            var result2 = engine.Eval("First(x).Field1");
+            Assert.Equal(11.0, ((NumberValue)result2).Value);
+        }
     }
 }

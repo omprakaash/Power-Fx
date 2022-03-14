@@ -12,6 +12,7 @@ using static Microsoft.PowerFx.ObjectMarshalerProvider;
 
 namespace Microsoft.PowerFx.Core.Public.Values
 {
+    // $$$ Move to interpreter?
     public class ObjectRecordValue : RecordValue
     {
         public object Source { get; set; }

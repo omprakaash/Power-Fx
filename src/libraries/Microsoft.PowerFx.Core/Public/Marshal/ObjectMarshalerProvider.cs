@@ -19,6 +19,7 @@ namespace Microsoft.PowerFx
     /// </summary>
     public class ObjectMarshalerProvider : ITypeMashalerProvider
     {
+        // Customization point 
         public Func<PropertyInfo, string> _mapper = (propInfo) => propInfo.Name;
 
         public ITypeMarshaler New(Type type, TypeMarshallerCache cache, int maxDepth)
@@ -68,6 +69,7 @@ namespace Microsoft.PowerFx
 
         internal class ObjectMarshaler : ITypeMarshaler
         {
+            // Map fx field name to a function produces the formula value given the dotnet object.
             internal Dictionary<string, Func<object, FormulaValue>> _mapping;
 
             internal FormulaType _fxType;
@@ -84,7 +86,7 @@ namespace Microsoft.PowerFx
                 return value;
             }
 
-            // GEt the value of the field. 
+            // Get the value of the field. 
             // Return null on missing
             internal FormulaValue TryGetField(object source, string name)
             {
